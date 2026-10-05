@@ -28,6 +28,14 @@ jobs:
           if ($process.ExitCode -ne 0 -or -not (Test-Path $report)) { throw 'Executable failed to launch' }
           $result = Get-Content $report | ConvertFrom-Json
           if (-not $result.success -or $result.event_count -ne 5 -or $result.qt_platform -ne 'windows') { throw 'GUI smoke check failed' }
+      - name: Verify installer in Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          .\scripts\install_windows.ps1 -ExePath .\dist\GoogleDesktopCalendar.exe -AutoStart
+          foreach ($folder in @('Desktop', 'Programs', 'Startup')) {
+            $shortcut = Join-Path ([Environment]::GetFolderPath($folder)) 'Google Desktop Calendar.lnk'
+            if (-not (Test-Path $shortcut)) { throw "Missing shortcut: $folder" }
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: GoogleDesktopCalendar-Windows-x64

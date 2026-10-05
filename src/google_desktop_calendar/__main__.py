@@ -18,6 +18,8 @@ def main() -> int:
     parser.add_argument("--account", default="normal")
     parser.add_argument("--smoke-report", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.smoke_report and args.smoke_report.is_dir():
+        parser.error("--smoke-report にはディレクトリではなくファイルを指定してください")
     if args.login:
         if not args.client_secret:
             parser.error("--client-secret が必要です")

@@ -9,7 +9,8 @@ New-Item -ItemType Directory -Path $installDir -Force | Out-Null
 $target = Join-Path $installDir 'GoogleDesktopCalendar.exe'
 Copy-Item -LiteralPath $ExePath -Destination $target -Force
 
-# exeの設定保存先を自身の起動検査から取得する。予定・トークン本文は出力しない。
+# Keep this script ASCII-compatible for Windows PowerShell 5.1.
+# Discover the config directory using the executable's own smoke report.
 $report = Join-Path $env:TEMP ('gdc-install-' + [guid]::NewGuid() + '.json')
 $process = Start-Process -FilePath $target -ArgumentList @('--demo', '--smoke-report', ('"' + $report + '"')) -PassThru
 if (-not $process.WaitForExit(120000)) { $process.Kill(); throw 'Executable did not exit' }
