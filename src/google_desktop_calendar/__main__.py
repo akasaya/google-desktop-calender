@@ -2,7 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .calendar import CalendarClient
+from .calendar import CalendarClient, CalendarError
 from .storage import config_dir
 
 
@@ -22,6 +22,9 @@ def main() -> int:
             parser.error("--client-secret が必要です")
         try:
             CalendarClient(args.config_dir).login(args.client_secret)
+        except CalendarError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
         except Exception:
             print("Googleへの接続を完了できませんでした。再試行してください。", file=sys.stderr)
             return 1

@@ -129,4 +129,20 @@ def test_login_uses_loopback_and_saves_only_after_success(monkeypatch, tmp_path)
     assert flow.run_local_server.call_args.kwargs["host"] == "127.0.0.1"
     assert flow.run_local_server.call_args.kwargs["port"] == 0
     assert flow.run_local_server.call_args.kwargs["timeout_seconds"] == 180
+    assert flow.run_local_server.call_args.kwargs["browser"] == "google-desktop-calendar-auth"
     assert (tmp_path / "token.json").is_file()
+
+
+def test_browser_launch_failure_is_shown_without_saving_token(monkeypatch, tmp_path):
+    from google_desktop_calendar.browser import BrowserOpenError
+
+    flow = MagicMock()
+    flow.client_type = "installed"
+    flow.run_local_server.side_effect = BrowserOpenError("Windowsのブラウザを開けませんでした。")
+    monkeypatch.setattr(
+        "google_desktop_calendar.calendar.InstalledAppFlow.from_client_secrets_file",
+        lambda *a: flow,
+    )
+    with pytest.raises(CalendarError, match="Windowsのブラウザ"):
+        CalendarClient(tmp_path).login(tmp_path / "client.json")
+    assert not (tmp_path / "token.json").exists()

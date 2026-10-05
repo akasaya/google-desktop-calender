@@ -41,6 +41,11 @@ uv run python scripts/install_desktop.py
 4. `uv run google-desktop-calendar` で起動し、「Googleに接続」でJSONを選択します。
 5. ブラウザで許可すると当日の予定が表示されます。ログイン待機は3分で終了します。
 
+WSLではWindows側の既定ブラウザを使用します。Windows実行ファイルを起動できる
+[WSL相互運用](https://learn.microsoft.com/windows/wsl/filesystems)が必要です。
+ブラウザ起動に失敗した場合はすぐにエラーを表示します。以前の認証画面が時間切れの場合は、
+「Googleに接続」を押し直して新しい認証を開始してください。
+
 認証には `calendar.readonly` スコープとローカルのループバックコールバックを使います。
 トークンはOSごとのユーザー設定フォルダ（Linuxでは `~/.config/google-desktop-calendar/token.json`）に保存します。
 POSIXではファイルを権限600で原子的に保存します。WindowsではOS側のユーザーフォルダ権限を使用してください。

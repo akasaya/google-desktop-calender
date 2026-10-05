@@ -10,6 +10,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from requests import RequestException
 
+from .browser import BrowserOpenError, register_auth_browser
 from .models import Event, day_bounds
 from .storage import save_private
 
@@ -50,11 +51,14 @@ class CalendarClient:
                 host="127.0.0.1",
                 port=0,
                 open_browser=True,
+                browser=register_auth_browser(),
                 timeout_seconds=180,
                 authorization_prompt_message="ブラウザでGoogleへの接続を完了してください。",
                 success_message="接続しました。このタブを閉じてアプリに戻ってください。",
             )
             save_private(self.root / "token.json", creds.to_json())
+        except BrowserOpenError as exc:
+            raise CalendarError(str(exc)) from exc
         except CalendarError:
             raise
         except Exception as exc:
