@@ -38,6 +38,7 @@
 - 既存MCP認証の明示インポートでは、元のGoogle権限が読み取り専用より広い可能性があります。新規の読み取り専用認証を推奨します。
 - 脆弱性DB未登録の問題、Qtのネイティブ部分を含む全バイナリの侵入試験、Windowsの他ユーザーによる攻撃試験、Google Cloudの管理設定全体は対象外です。
 - 文字列パターン検査は、難読化された秘密情報や画像内の情報を完全には検出できません。同梱画像はデモ予定であることを目視確認済みです。
+- Gitの作者情報にはGitHub noreply形式ではないメールアドレスが含まれ、公開されています。認証情報ではありませんが、公開したくない場合は今後の作者設定をnoreplyへ変更し、過去履歴は別途扱う必要があります。今回、作者情報の変更・共有履歴の書き換えは行っていません。
 - Googleアカウントの二要素認証、OSの更新・ディスク暗号化、配布元アカウントの保護は別途管理する必要があります。
 
 ## 再確認の入口
@@ -45,3 +46,18 @@
 `SECURITY.md` のコマンドとGitHubのSecurity / CI / Windows EXEワークフローを確認してください。
 Windows上ではDPAPIの実APIによる移行・復号・改ざん拒否をテストします。
 LinuxではこのWindows専用試験はskipとなり、成功件数には含めません。
+
+## 最終確認
+
+修正コードの対象コミットは `81548d0` です。
+
+- Linux: 49件成功、Windows専用1件はskip。Windows: 50件成功。
+- [Security CI](https://github.com/akasaya/google-desktop-calender/actions/runs/37343561135)、[通常CI](https://github.com/akasaya/google-desktop-calender/actions/runs/37343561160)、[Windows exeビルド](https://github.com/akasaya/google-desktop-calender/actions/runs/37343560919)は成功。
+- Git履歴69 blobsに秘密情報パターンの指摘なし。GitHubの未解決Secret scanning / Dependabotアラートは0件。
+- 最終exeの同梱861項目に認証ファイル名の混入なし。ダウンロードしたexeとCI生成SHA-256が一致。
+- Windows実機で既存の平文認証をDPAPI形式へ移行し、平文のトークン項目が保存されていないことを確認。
+- 別プロセスで暗号化済み認証を再読み込みして、実予定の取得・画面表示に成功。予定本文は記録していません。
+- 認証ファイルにEveryone / Authenticated Users / Usersグループへの許可がないことを確認。
+- Linux側の設定ディレクトリ700・トークン600、および利用中のGoogle権限が読み取り専用のみであることを確認。
+- Windows Authenticodeの状態は `NotSigned`。配布元を暗号学的に証明する署名は未対応。
+- 更新したWindowsアプリを起動済み。自動起動ショートカットの参照先も維持。
