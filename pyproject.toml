@@ -1,0 +1,37 @@
+[project]
+name = "google-desktop-calendar"
+version = "0.1.0"
+description = "今日の Google カレンダーを表示するデスクトップアプリ"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "pyside6>=6.8,<7",
+  "google-auth-oauthlib>=1.2,<2",
+  "requests>=2.32,<3",
+  "platformdirs>=4,<5",
+  "tzdata>=2025.1",
+]
+
+[project.gui-scripts]
+google-desktop-calendar = "google_desktop_calendar.__main__:main"
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "pytest-qt>=4.4,<5", "ruff>=0.11,<1"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+qt_api = "pyside6"
