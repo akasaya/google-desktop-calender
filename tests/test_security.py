@@ -33,6 +33,8 @@ def test_google_calendar_urls_allowed(url):
         "https://calendar.google.com@evil.example/calendar/",
         "https://www.google.com/url?q=https://evil.example",
         "https://calendar.google.com:444/calendar/",
+        "https://www.google.com/calendar/../url?q=https://evil.example",
+        "https://www.google.com/calendar/%2e%2e/url?q=https://evil.example",
         "https://[broken",
         "https://calendar.google.com/calendar/\n",
         "https://evil.example/calendar/",

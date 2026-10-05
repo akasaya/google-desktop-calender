@@ -41,6 +41,6 @@ def allowed_url(url: str, *, auth: bool = False) -> bool:
         return parsed.hostname in {
             "calendar.google.com",
             "www.google.com",
-        } and parsed.path.startswith("/calendar/")
+        } and parsed.path == "/calendar/event"
     except ValueError:
         return False
