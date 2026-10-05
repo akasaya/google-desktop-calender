@@ -38,9 +38,13 @@ def allowed_url(url: str, *, auth: bool = False) -> bool:
             return False
         if auth:
             return f"https://{parsed.netloc}{parsed.path}" in AUTH_ENDPOINTS
-        return parsed.hostname in {
-            "calendar.google.com",
-            "www.google.com",
-        } and parsed.path == "/calendar/event"
+        return (
+            parsed.hostname
+            in {
+                "calendar.google.com",
+                "www.google.com",
+            }
+            and parsed.path == "/calendar/event"
+        )
     except ValueError:
         return False
