@@ -6,6 +6,37 @@ Google Calendar APIへの操作は読み取り専用です。
 
 ![デモ画面（サンプル予定）](docs/preview.png)
 
+## Windows版（Python・WSL不要）
+
+GitHub Actions の **Windows EXE** ワークフローから
+`GoogleDesktopCalendar-Windows-x64` をダウンロードして展開します。
+`dist/GoogleDesktopCalendar.exe` をダブルクリックで起動できます。
+単体exeにPythonとQtを同梱するため、初回の起動には展開時間がかかります。
+
+デスクトップとスタートメニューに登録する場合は、展開したフォルダでPowerShellから実行します。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install_windows.ps1 -ExePath .\dist\GoogleDesktopCalendar.exe
+```
+
+Windowsへのログイン時にも起動したい場合は、末尾に `-AutoStart` を付けて登録します。
+自動起動を解除する場合は、`Win+R` → `shell:startup` を開き、
+`Google Desktop Calendar` のショートカットを削除してください。
+通常の配置先は `%LOCALAPPDATA%\Programs\GoogleDesktopCalendar` です。
+設定とGoogle認証はexeと分離してユーザー設定フォルダに保存されます。
+既存のWindows認証を上書きせず、WSLから引き継ぐ場合のみインストールスクリプトの
+`-CredentialSource` に既存の `token.json` を明示指定できます。
+
+Windows上で自分でビルドする場合:
+
+```powershell
+uv sync --locked --dev --group build
+uv run python scripts/build_windows.py
+```
+
+GitHub ActionsではWindows上のテストに加え、ビルドしたexeそのものを起動し、
+WindowsのQt描画環境とデモ予定5件の表示を検査します。exeには認証情報を含めません。
+
 ## 開発環境
 
 Python 3.12 と [uv](https://docs.astral.sh/uv/getting-started/installation/) を使います。
@@ -17,7 +48,7 @@ uv run google-desktop-calendar --demo
 ```
 
 デモはサンプル予定です。実際の予定を表示するには以下の認証を行ってください。
-Linux / WSLg を主な対象にしています。Windows / macOSも同じPython構成ですが、実機検証は未実施です。
+Linux / WSLg と Windows に対応します。macOSは実機検証未実施です。
 WSLではWSLgなどのGUI表示環境が必要です。Qtの共有ライブラリが不足する場合、Ubuntuでは
 `sudo apt install libegl1 libopengl0 libxcb-cursor0 libxkbcommon-x11-0` を実行します。
 日本語フォントがないLinuxでは `fonts-noto-cjk` も導入してください。

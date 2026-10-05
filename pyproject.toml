@@ -16,6 +16,9 @@ dependencies = [
 google-desktop-calendar = "google_desktop_calendar.__main__:main"
 
 [dependency-groups]
+build = [
+    "pyinstaller>=6.16,<7",
+]
 dev = ["pytest>=8,<10", "pytest-qt>=4.4,<5", "ruff>=0.11,<1"]
 
 [build-system]

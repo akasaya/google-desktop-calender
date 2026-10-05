@@ -1,0 +1,37 @@
+name: Windows EXE
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked --dev --group build
+      - run: uv run pytest
+        env:
+          QT_QPA_PLATFORM: offscreen
+      - run: uv run python scripts/build_windows.py
+      - name: Verify standalone executable
+        shell: pwsh
+        run: |
+          $report = Join-Path $env:RUNNER_TEMP 'calendar-smoke.json'
+          $process = Start-Process -FilePath '.\dist\GoogleDesktopCalendar.exe' -ArgumentList @('--demo', '--smoke-report', $report) -PassThru
+          if (-not $process.WaitForExit(120000)) { $process.Kill(); throw 'Executable did not exit' }
+          if ($process.ExitCode -ne 0 -or -not (Test-Path $report)) { throw 'Executable failed to launch' }
+          $result = Get-Content $report | ConvertFrom-Json
+          if (-not $result.success -or $result.event_count -ne 5 -or $result.qt_platform -ne 'windows') { throw 'GUI smoke check failed' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GoogleDesktopCalendar-Windows-x64
+          path: |
+            dist/GoogleDesktopCalendar.exe
+            scripts/install_windows.ps1
+          retention-days: 30

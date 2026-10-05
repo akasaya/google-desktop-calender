@@ -16,6 +16,7 @@ def main() -> int:
     )
     parser.add_argument("--client-secret", type=Path)
     parser.add_argument("--account", default="normal")
+    parser.add_argument("--smoke-report", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.login:
         if not args.client_secret:
@@ -46,13 +47,20 @@ def main() -> int:
         print("認証を取り込みました。元ファイルは変更していません。")
         return 0
 
+    from PySide6.QtGui import QIcon
     from PySide6.QtWidgets import QApplication
 
     from .window import CalendarWindow
 
     app = QApplication(sys.argv[:1])
     app.setApplicationName("Google Desktop Calendar")
+    resource_root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
+    app.setWindowIcon(QIcon(str(resource_root / "assets/calendar.svg")))
     window = CalendarWindow(args.config_dir, demo=args.demo)
+    if args.smoke_report:
+        from .smoke import attach_smoke_report
+
+        attach_smoke_report(window, args.smoke_report)
     window.show()
     return app.exec()
 
