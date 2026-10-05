@@ -9,3 +9,6 @@
 - 変更後は uv run ruff check .、uv run ruff format --check .、QT_QPA_PLATFORM=offscreen uv run pytest を実行する。
 - GUI変更時はデモ画面も確認する。実Google接続とデモ・モック試験を区別して報告する。
 - Agent.md はこのファイルへのリンク。作業方針はここにまとめる。
+- セキュリティ変更・公開前は SECURITY.md のチェックリストを適用する。秘密情報検査・Bandit・全ロック依存の脆弱性検査を実行し、未検証範囲を区別する。
+- OAuthの接続先・外部リンクは許可リストで制限する。PKCE・state・TLS検証を無効化しない。
+- Windowsの認証保存はDPAPIを使用する。暗号化エラー時に平文保存へ切り替えない。

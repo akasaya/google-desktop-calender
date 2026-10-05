@@ -2,6 +2,13 @@ name: Windows EXE
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/windows.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -10,8 +17,10 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           enable-cache: true
       - run: uv sync --locked --dev --group build
@@ -36,10 +45,16 @@ jobs:
             $shortcut = Join-Path ([Environment]::GetFolderPath($folder)) 'Google Desktop Calendar.lnk'
             if (-not (Test-Path $shortcut)) { throw "Missing shortcut: $folder" }
           }
-      - uses: actions/upload-artifact@v4
+      - name: Record executable checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash .\dist\GoogleDesktopCalendar.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  GoogleDesktopCalendar.exe" | Set-Content .\dist\SHA256SUMS.txt -Encoding ascii
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: GoogleDesktopCalendar-Windows-x64
           path: |
             dist/GoogleDesktopCalendar.exe
+            dist/SHA256SUMS.txt
             scripts/install_windows.ps1
           retention-days: 30

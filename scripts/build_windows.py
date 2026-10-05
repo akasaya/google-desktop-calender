@@ -1,6 +1,7 @@
 """Windows上で、Python不要の単体exeをビルドする。"""
 
-import subprocess
+# invokes this environment's Python with fixed arguments.
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 
@@ -27,7 +28,8 @@ icon = build / "calendar.ico"
 if not canvas.save(str(icon), "ICO"):
     raise SystemExit("アイコンの作成に失敗しました。")
 
-subprocess.run(
+# no shell; all paths derive from this checked-out project.
+subprocess.run(  # nosec B603
     [
         sys.executable,
         "-m",

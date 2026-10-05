@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 from .calendar import CalendarClient, CalendarError
 from .fonts import load_japanese_font
 from .models import Event, demo_events
+from .security import allowed_url
 from .storage import load_settings, save_private
 
 STYLE = """
@@ -317,7 +318,7 @@ class CalendarWindow(QMainWindow):
             box.addWidget(label(event.title, "title"))
             if event.location:
                 box.addWidget(label(event.location, "muted"))
-            if event.url.startswith("https://"):
+            if allowed_url(event.url):
                 button = QPushButton("カレンダーで開く ↗")
                 button.clicked.connect(
                     lambda checked=False, url=event.url: QDesktopServices.openUrl(QUrl(url))

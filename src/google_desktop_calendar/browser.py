@@ -1,8 +1,12 @@
 import platform
 import shutil
-import subprocess
+
+# fixed command, URL passed through stdin without a shell.
+import subprocess  # nosec B404
 import webbrowser
 from pathlib import Path
+
+from .security import allowed_url
 
 
 class BrowserOpenError(Exception):
@@ -10,6 +14,8 @@ class BrowserOpenError(Exception):
 
 
 def open_browser(url: str) -> bool:
+    if not allowed_url(url, auth=True):
+        raise BrowserOpenError("Google公式の認証URL以外は開けません。")
     if "microsoft" in platform.release().lower():
         powershell = shutil.which("powershell.exe") or (
             "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
@@ -20,7 +26,8 @@ def open_browser(url: str) -> bool:
             )
         try:
             # URLはコマンドに埋め込まず、標準入力からデータとして渡す。
-            subprocess.run(
+            # fixed PowerShell code; URL is data on stdin.
+            subprocess.run(  # nosec B603
                 [
                     powershell,
                     "-NoProfile",

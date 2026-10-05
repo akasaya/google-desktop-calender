@@ -6,6 +6,7 @@ import pytest
 from requests import Timeout
 
 from google_desktop_calendar.calendar import CalendarClient, CalendarError
+from google_desktop_calendar.storage import load_token
 
 
 def event(title, start, end, **extra):
@@ -89,26 +90,28 @@ def test_missing_credentials_asks_for_login(tmp_path):
 
 
 def test_refreshes_and_persists_expired_credentials(monkeypatch, tmp_path):
+    monkeypatch.setattr("google_desktop_calendar.calendar.load_token", lambda _: {})
     creds = MagicMock()
     creds.valid = False
     creds.refresh_token = "test-only"
     creds.to_json.return_value = '{"test": true}'
     monkeypatch.setattr(
-        "google_desktop_calendar.calendar.Credentials.from_authorized_user_file", lambda _: creds
+        "google_desktop_calendar.calendar.Credentials.from_authorized_user_info", lambda _: creds
     )
     assert CalendarClient(tmp_path).credentials() is creds
     creds.refresh.assert_called_once()
-    assert (tmp_path / "token.json").read_text() == '{"test": true}'
+    assert load_token(tmp_path / "token.json") == {"test": True}
 
 
 def test_revoked_refresh_token_requests_reauthentication(monkeypatch, tmp_path):
     from google.auth.exceptions import RefreshError
 
     creds = MagicMock()
+    monkeypatch.setattr("google_desktop_calendar.calendar.load_token", lambda _: {})
     creds.valid = False
     creds.refresh.side_effect = RefreshError("private provider details")
     monkeypatch.setattr(
-        "google_desktop_calendar.calendar.Credentials.from_authorized_user_file", lambda _: creds
+        "google_desktop_calendar.calendar.Credentials.from_authorized_user_info", lambda _: creds
     )
     with pytest.raises(CalendarError, match="再接続") as error:
         CalendarClient(tmp_path).credentials()
@@ -116,15 +119,16 @@ def test_revoked_refresh_token_requests_reauthentication(monkeypatch, tmp_path):
     assert not (tmp_path / "token.json").exists()
 
 
-def test_login_uses_loopback_and_saves_only_after_success(monkeypatch, tmp_path):
+def test_login_uses_loopback_and_saves_only_after_success(monkeypatch, tmp_path, client_secret):
     flow = MagicMock()
     flow.client_type = "installed"
     flow.run_local_server.return_value.to_json.return_value = '{"test": true}'
     factory = MagicMock(return_value=flow)
     monkeypatch.setattr(
-        "google_desktop_calendar.calendar.InstalledAppFlow.from_client_secrets_file", factory
+        "google_desktop_calendar.calendar.InstalledAppFlow.from_client_config", factory
     )
-    CalendarClient(tmp_path).login(tmp_path / "client.json")
+    CalendarClient(tmp_path).login(client_secret)
+    assert factory.call_args.kwargs["autogenerate_code_verifier"] is True
     assert factory.call_args.args[1] == ["https://www.googleapis.com/auth/calendar.readonly"]
     assert flow.run_local_server.call_args.kwargs["host"] == "127.0.0.1"
     assert flow.run_local_server.call_args.kwargs["port"] == 0
@@ -133,16 +137,16 @@ def test_login_uses_loopback_and_saves_only_after_success(monkeypatch, tmp_path)
     assert (tmp_path / "token.json").is_file()
 
 
-def test_browser_launch_failure_is_shown_without_saving_token(monkeypatch, tmp_path):
+def test_browser_launch_failure_is_shown_without_saving_token(monkeypatch, tmp_path, client_secret):
     from google_desktop_calendar.browser import BrowserOpenError
 
     flow = MagicMock()
     flow.client_type = "installed"
     flow.run_local_server.side_effect = BrowserOpenError("Windowsのブラウザを開けませんでした。")
     monkeypatch.setattr(
-        "google_desktop_calendar.calendar.InstalledAppFlow.from_client_secrets_file",
-        lambda *a: flow,
+        "google_desktop_calendar.calendar.InstalledAppFlow.from_client_config",
+        lambda *a, **kw: flow,
     )
     with pytest.raises(CalendarError, match="Windowsのブラウザ"):
-        CalendarClient(tmp_path).login(tmp_path / "client.json")
+        CalendarClient(tmp_path).login(client_secret)
     assert not (tmp_path / "token.json").exists()

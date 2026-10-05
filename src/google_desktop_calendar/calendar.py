@@ -12,7 +12,8 @@ from requests import RequestException
 
 from .browser import BrowserOpenError, register_auth_browser
 from .models import Event, day_bounds
-from .storage import save_private
+from .security import trusted_desktop_config
+from .storage import load_token, save_token
 
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
@@ -27,7 +28,7 @@ class CalendarClient:
 
     def credentials(self) -> Credentials:
         try:
-            creds = Credentials.from_authorized_user_file(str(self.root / "token.json"))
+            creds = Credentials.from_authorized_user_info(load_token(self.root / "token.json"))
         except (OSError, ValueError, KeyError) as exc:
             raise CalendarError("「Googleに接続」からログインしてください。") from exc
         if not creds.valid:
@@ -35,14 +36,19 @@ class CalendarClient:
                 raise CalendarError("認証の有効期限が切れました。Googleに再接続してください。")
             try:
                 creds.refresh(Request())
-                save_private(self.root / "token.json", creds.to_json())
+                save_token(self.root / "token.json", creds.to_json())
             except RefreshError as exc:
                 raise CalendarError("認証を更新できません。Googleに再接続してください。") from exc
         return creds
 
     def login(self, secret_path: Path) -> None:
         try:
-            flow = InstalledAppFlow.from_client_secrets_file(str(secret_path), SCOPES)
+            config = json.loads(secret_path.read_text(encoding="utf-8"))
+            if not trusted_desktop_config(config):
+                raise CalendarError("Google公式のデスクトップアプリ用OAuth設定を選択してください。")
+            flow = InstalledAppFlow.from_client_config(
+                config, SCOPES, autogenerate_code_verifier=True
+            )
             if flow.client_type != "installed":
                 raise CalendarError(
                     "デスクトップアプリ用のOAuthクライアントJSONを選択してください。"
@@ -56,7 +62,7 @@ class CalendarClient:
                 authorization_prompt_message="ブラウザでGoogleへの接続を完了してください。",
                 success_message="接続しました。このタブを閉じてアプリに戻ってください。",
             )
-            save_private(self.root / "token.json", creds.to_json())
+            save_token(self.root / "token.json", creds.to_json())
         except BrowserOpenError as exc:
             raise CalendarError(str(exc)) from exc
         except CalendarError:
@@ -115,7 +121,8 @@ class CalendarClient:
         """明示指定された既存認証をコピーする。元ファイルは変更しない。"""
         tokens = json.loads(tokens_path.read_text())[account]
         secret = json.loads(secret_path.read_text())["installed"]
-        creds = Credentials(
+        # token_uri is a public Google endpoint, not a password.
+        creds = Credentials(  # nosec B106
             token=tokens.get("access_token"),
             refresh_token=tokens["refresh_token"],
             token_uri="https://oauth2.googleapis.com/token",
@@ -123,4 +130,4 @@ class CalendarClient:
             client_secret=secret["client_secret"],
         )
         creds.refresh(Request())
-        save_private(self.root / "token.json", creds.to_json())
+        save_token(self.root / "token.json", creds.to_json())

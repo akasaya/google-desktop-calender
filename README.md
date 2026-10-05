@@ -79,7 +79,8 @@ WSLではWindows側の既定ブラウザを使用します。Windows実行ファ
 
 認証には `calendar.readonly` スコープとローカルのループバックコールバックを使います。
 トークンはOSごとのユーザー設定フォルダ（Linuxでは `~/.config/google-desktop-calendar/token.json`）に保存します。
-POSIXではファイルを権限600で原子的に保存します。WindowsではOS側のユーザーフォルダ権限を使用してください。
+POSIXではファイルを権限600で原子的に保存します。Windowsではユーザー単位のDPAPIで暗号化します。
+旧Windows版の平文ファイルは、初回読み込みで暗号化形式へ移行します。Windowsの暗号化済みファイルは、別のPC・ユーザー・WSLへそのままコピーしても利用できません。
 予定本文はディスクにキャッシュしません。通信失敗時は同じ日の前回取得分を画面に残し、その旨を表示します。
 Google側で許可を取り消した場合は「Googleに接続」で再認証してください。
 コマンドから認証画面を開く場合は `uv run google-desktop-calendar --login --client-secret /path/to/client_secret.json` を使えます。
@@ -106,6 +107,8 @@ uv run google-desktop-calendar --import-mcp-tokens /path/to/tokens.json \
 - 設定の保存先は `--config-dir /path/to/config` または `GDC_CONFIG_DIR` で変更できます。
 
 ## 検証
+
+セキュリティの開発チェックリストと検査手順は [SECURITY.md](SECURITY.md) を参照してください。
 
 ```bash
 uv run ruff check .
